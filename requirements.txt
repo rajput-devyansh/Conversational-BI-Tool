@@ -4,3 +4,4 @@ numpy
 sqlalchemy
 langchain
 langgraph
+langchain_ollama

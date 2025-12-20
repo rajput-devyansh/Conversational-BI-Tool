@@ -28,7 +28,7 @@ def create_text_to_sql_chain(llm):
 
     def run(question: str) -> str:
         return chain.invoke({
-            "schema_context": schema_context,
+            "schema": schema_context,
             "business_rules": business_rules,
             "question": question
         }).strip()

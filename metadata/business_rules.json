@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "source": "Kaggle Olist Dataset Metadata",
   "currency": "BRL",
 
@@ -15,7 +15,8 @@
       "notes": [
         "Orders may contain multiple items.",
         "Freight value is split across items.",
-        "Payments may contain multiple rows per order and can cause double counting."
+        "Payments may contain multiple rows per order and can cause double counting.",
+        "Revenue should be aggregated at item level and then rolled up to orders."
       ]
     },
 
@@ -52,13 +53,35 @@
     "default_language": "Portuguese",
     "business_language": "English",
     "translation_required": true,
+
     "join_rule": {
       "from": "products.product_category_name",
       "to": "category_name_translation.product_category_name"
     },
+
+    "column_ownership": {
+      "products": [
+        "product_id",
+        "product_category_name"
+      ],
+      "category_name_translation": [
+        "product_category_name",
+        "product_category_name_english"
+      ]
+    },
+
     "display_column": "category_name_translation.product_category_name_english",
+
+    "rules": [
+      "English category names exist ONLY in the category_name_translation table.",
+      "Do NOT assume product_category_name_english exists in the products table.",
+      "When grouping or selecting category names in English, always reference category_name_translation.product_category_name_english.",
+      "Always join category_name_translation when English category labels are required."
+    ],
+
     "notes": [
-      "Always use translated category names for charts and summaries when available."
+      "Always use translated category names for charts and summaries when available.",
+      "Portuguese category names may be used only if translation is unavailable."
     ]
   },
 
@@ -85,7 +108,8 @@
     "delivery_date": "orders.order_delivered_customer_date",
     "rules": [
       "Use purchase timestamp for sales trends.",
-      "Use delivery dates for logistics performance analysis."
+      "Use delivery dates for logistics performance analysis.",
+      "For monthly aggregation in SQLite, use strftime('%Y-%m', date_column)."
     ]
   },
 
@@ -109,7 +133,9 @@
       "Summing payments.payment_value directly",
       "Counting orders without DISTINCT when joining",
       "Using customer_id for repeat customer analysis",
-      "Displaying Portuguese category names in business summaries"
+      "Displaying Portuguese category names in business summaries",
+      "Referencing product_category_name_english from the products table",
+      "Using untranslated category names when English labels are required"
     ]
   }
 }
