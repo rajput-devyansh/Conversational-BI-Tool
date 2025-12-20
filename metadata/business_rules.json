@@ -1,0 +1,115 @@
+{
+  "version": "1.0",
+  "source": "Kaggle Olist Dataset Metadata",
+  "currency": "BRL",
+
+  "metrics": {
+    "revenue": {
+      "name": "Total Order Revenue",
+      "preferred_table": "order_items",
+      "formula": "SUM(order_items.price + order_items.freight_value)",
+      "grouping_key": "orders.order_id",
+      "avoid_tables": [
+        "payments"
+      ],
+      "notes": [
+        "Orders may contain multiple items.",
+        "Freight value is split across items.",
+        "Payments may contain multiple rows per order and can cause double counting."
+      ]
+    },
+
+    "order_count": {
+      "name": "Number of Orders",
+      "preferred_table": "orders",
+      "formula": "COUNT(DISTINCT orders.order_id)",
+      "notes": [
+        "Use DISTINCT to avoid duplication when joining with order_items or payments."
+      ]
+    },
+
+    "average_order_value": {
+      "name": "Average Order Value (AOV)",
+      "definition": "Total revenue divided by number of distinct orders",
+      "formula": "SUM(order_items.price + order_items.freight_value) / COUNT(DISTINCT orders.order_id)",
+      "notes": [
+        "Compute revenue at order level before averaging.",
+        "Avoid averaging item-level prices directly."
+      ]
+    }
+  },
+
+  "customer_identity": {
+    "stable_customer_key": "customers.customer_unique_id",
+    "order_level_key": "customers.customer_id",
+    "rules": [
+      "Use customer_unique_id to identify repeat customers.",
+      "customer_id is scoped to a single order and should not be used for retention analysis."
+    ]
+  },
+
+  "category_handling": {
+    "default_language": "Portuguese",
+    "business_language": "English",
+    "translation_required": true,
+    "join_rule": {
+      "from": "products.product_category_name",
+      "to": "category_name_translation.product_category_name"
+    },
+    "display_column": "category_name_translation.product_category_name_english",
+    "notes": [
+      "Always use translated category names for charts and summaries when available."
+    ]
+  },
+
+  "payments": {
+    "granularity": "order_payment_attempt",
+    "rules": [
+      "An order may have multiple payment rows.",
+      "Do not use payments as the primary revenue source.",
+      "Use payments for analyzing payment methods, installments, and payment behavior."
+    ]
+  },
+
+  "reviews": {
+    "temporal_relationship": "post_delivery",
+    "rules": [
+      "Reviews are created after delivery or estimated delivery date.",
+      "Review timestamps lag purchase timestamps.",
+      "Do not align reviews directly with purchase month for trend analysis."
+    ]
+  },
+
+  "time_dimensions": {
+    "preferred_order_date": "orders.order_purchase_timestamp",
+    "delivery_date": "orders.order_delivered_customer_date",
+    "rules": [
+      "Use purchase timestamp for sales trends.",
+      "Use delivery dates for logistics performance analysis."
+    ]
+  },
+
+  "join_guidelines": {
+    "safe_joins": [
+      "orders -> order_items",
+      "orders -> customers",
+      "orders -> reviews",
+      "order_items -> products",
+      "products -> category_name_translation"
+    ],
+    "caution_joins": [
+      "orders -> payments (may multiply rows)",
+      "orders -> geolocation (many-to-many via zip codes)"
+    ]
+  },
+
+  "llm_guardrails": {
+    "preferred_revenue_source": "order_items",
+    "avoid_common_errors": [
+      "Summing payments.payment_value directly",
+      "Counting orders without DISTINCT when joining",
+      "Using customer_id for repeat customer analysis",
+      "Displaying Portuguese category names in business summaries"
+    ]
+  }
+}
