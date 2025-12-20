@@ -1,0 +1,177 @@
+{
+  "database": "brazilian_ecommerce",
+  "description": "Brazilian e-commerce dataset containing orders, customers, products, sellers, payments, reviews, and geolocation data.",
+  "business_context": {
+    "time_range": "2016-2018",
+    "currency": "BRL",
+    "common_pitfalls": [
+      "Orders may contain multiple items",
+      "Orders may contain multiple payment rows",
+      "Freight value is split across items",
+      "customer_id is not a stable customer identifier"
+    ]
+  },
+  "tables": {
+    "orders": {
+      "description": "Core order table. Each row represents a single order placed by a customer.",
+      "primary_key": "order_id",
+      "foreign_keys": {
+        "customer_id": "customers.customer_id"
+      },
+      "business_notes": [
+        "This is the central table linking customers, items, payments, reviews, and delivery.",
+        "Order status should be considered when calculating delivered or completed orders."
+      ],
+      "columns": {
+        "order_id": "Unique identifier of the order",
+        "customer_id": "Identifier of the customer who placed the order",
+        "order_status": "Current order status (e.g. delivered, shipped, canceled)",
+        "order_purchase_timestamp": "Timestamp when the order was placed",
+        "order_approved_at": "Timestamp when payment was approved",
+        "order_delivered_carrier_date": "Date when order was handed to the logistic partner",
+        "order_delivered_customer_date": "Date when order was delivered to the customer",
+        "order_estimated_delivery_date": "Estimated delivery date informed at purchase time"
+      }
+    },
+
+    "order_items": {
+      "description": "Line items for each order. Each row represents a product item in an order.",
+      "primary_key": null,
+      "foreign_keys": {
+        "order_id": "orders.order_id",
+        "product_id": "products.product_id",
+        "seller_id": "sellers.seller_id"
+      },
+      "business_notes": [
+        "An order may contain multiple items, including repeated products.",
+        "Freight value is split across items.",
+        "Total order revenue should be calculated as SUM(price + freight_value).",
+        "This table is the preferred source for revenue calculations."
+      ],
+      "columns": {
+        "order_id": "Identifier of the order",
+        "order_item_id": "Sequential number identifying the item within the order",
+        "product_id": "Identifier of the purchased product",
+        "seller_id": "Identifier of the seller fulfilling the item",
+        "shipping_limit_date": "Seller shipping deadline for the order item",
+        "price": "Item price excluding freight",
+        "freight_value": "Freight value allocated to the item"
+      }
+    },
+
+    "payments": {
+      "description": "Payment records for orders, including payment method and installments.",
+      "primary_key": null,
+      "foreign_keys": {
+        "order_id": "orders.order_id"
+      },
+      "business_notes": [
+        "An order may have multiple payment rows due to split payment methods.",
+        "Summing payment_value without grouping by order_id may cause double counting.",
+        "Use this table for payment method and installment analysis, not primary revenue."
+      ],
+      "columns": {
+        "order_id": "Identifier of the order",
+        "payment_sequential": "Sequential number of the payment attempt",
+        "payment_type": "Payment method used by the customer",
+        "payment_installments": "Number of installments chosen",
+        "payment_value": "Transaction value for the payment row"
+      }
+    },
+
+    "customers": {
+      "description": "Customer information including geographic location.",
+      "primary_key": "customer_id",
+      "business_notes": [
+        "Each order has a unique customer_id.",
+        "customer_unique_id should be used to identify repeat customers.",
+        "Do not use customer_id alone for customer retention analysis."
+      ],
+      "columns": {
+        "customer_id": "Order-scoped customer identifier",
+        "customer_unique_id": "Stable identifier for identifying repeat customers",
+        "customer_zip_code_prefix": "First five digits of the customer zip code",
+        "customer_city": "Customer city name",
+        "customer_state": "Customer state"
+      }
+    },
+
+    "products": {
+      "description": "Product catalog with category and physical attributes.",
+      "primary_key": "product_id",
+      "business_notes": [
+        "Product category names are in Portuguese.",
+        "Join with category_name_translation to display category names in English.",
+        "Category analysis should prefer translated names for business reporting."
+      ],
+      "columns": {
+        "product_id": "Unique identifier for each product",
+        "product_category_name": "Root product category name in Portuguese",
+        "product_name_length": "Number of characters in the product name",
+        "product_description_length": "Number of characters in the product description",
+        "product_photos_qty": "Number of product photos published",
+        "product_weight_g": "Product weight in grams",
+        "product_length_cm": "Product length in centimeters",
+        "product_height_cm": "Product height in centimeters",
+        "product_width_cm": "Product width in centimeters"
+      }
+    },
+
+    "category_name_translation": {
+      "description": "Mapping between Portuguese product category names and their English translations.",
+      "primary_key": "product_category_name",
+      "foreign_keys": {
+        "product_category_name": "products.product_category_name"
+      },
+      "columns": {
+        "product_category_name": "Product category name in Portuguese",
+        "product_category_name_english": "Product category name in English"
+      }
+    },
+
+    "reviews": {
+      "description": "Customer reviews and satisfaction scores for orders.",
+      "primary_key": "review_id",
+      "foreign_keys": {
+        "order_id": "orders.order_id"
+      },
+      "business_notes": [
+        "Reviews are submitted after delivery or estimated delivery date.",
+        "Review timestamps may lag purchase timestamps.",
+        "Use reviews for satisfaction and quality analysis, not immediate sales trends."
+      ],
+      "columns": {
+        "review_id": "Unique identifier for the review",
+        "order_id": "Identifier of the reviewed order",
+        "review_score": "Satisfaction score ranging from 1 to 5",
+        "review_comment_title": "Title of the customer review (Portuguese)",
+        "review_comment_message": "Full review text (Portuguese)",
+        "review_creation_date": "Date the review survey was sent",
+        "review_answer_timestamp": "Timestamp when the review was answered"
+      }
+    },
+
+    "sellers": {
+      "description": "Seller information and geographic location.",
+      "primary_key": "seller_id",
+      "columns": {
+        "seller_id": "Unique identifier for the seller",
+        "seller_zip_code_prefix": "First five digits of the seller zip code",
+        "seller_city": "Seller city name",
+        "seller_state": "Seller state"
+      }
+    },
+
+    "geolocation": {
+      "description": "Mapping of Brazilian zip code prefixes to geographic coordinates.",
+      "primary_key": null,
+      "columns": {
+        "geolocation_zip_code_prefix": "First five digits of the zip code",
+        "geolocation_lat": "Latitude",
+        "geolocation_lng": "Longitude",
+        "geolocation_city": "City name",
+        "geolocation_state": "State code"
+      }
+    }
+  }
+}
