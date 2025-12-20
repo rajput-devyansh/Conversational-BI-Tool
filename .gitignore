@@ -3,6 +3,20 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Python
+*.pyc
+
+# Streamlit
+.streamlit/
+
+# Data
+*.db
+data/raw/*
+data/processed/*
+
+# OS
+.DS_Store
+
 # C extensions
 *.so
 
