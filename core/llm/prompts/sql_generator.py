@@ -21,6 +21,10 @@ SQL RULES:
 - For monthly grouping in SQLite, use:
   strftime('%Y-%m', date_column)
 
+DEFAULT FILTERING RULE:
+- Do NOT apply order_status filters unless the user explicitly mentions a status.
+- Never assume delivered or shipped orders unless stated.
+
 If you violate any rule, the query will be rejected.
 """
 

@@ -3,20 +3,30 @@
   "source": "Kaggle Olist Dataset Metadata",
   "currency": "BRL",
 
+  "query_defaults": {
+    "order_scope": "all",
+    "rules": [
+      "Do NOT filter orders by status unless the user explicitly asks.",
+      "Include all orders by default, regardless of status.",
+      "Apply order_status filters ONLY when the user mentions delivered, shipped, completed, or cancelled orders."
+    ]
+  },
+
   "metrics": {
     "revenue": {
       "name": "Total Order Revenue",
       "preferred_table": "order_items",
       "formula": "SUM(order_items.price + order_items.freight_value)",
       "grouping_key": "orders.order_id",
-      "avoid_tables": [
-        "payments"
-      ],
+      "avoid_tables": ["payments"],
       "notes": [
         "Orders may contain multiple items.",
         "Freight value is split across items.",
         "Payments may contain multiple rows per order and can cause double counting.",
-        "Revenue should be aggregated at item level and then rolled up to orders."
+        "Revenue should be aggregated at item level and then rolled up to orders.",
+        "Revenue should include all orders by default.",
+        "Filter by order_status only when explicitly requested by the user.",
+        "Delivered-only revenue may be used for fulfillment analysis, not general revenue."
       ]
     },
 
@@ -60,10 +70,7 @@
     },
 
     "column_ownership": {
-      "products": [
-        "product_id",
-        "product_category_name"
-      ],
+      "products": ["product_id", "product_category_name"],
       "category_name_translation": [
         "product_category_name",
         "product_category_name_english"
