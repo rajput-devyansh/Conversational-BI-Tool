@@ -1,7 +1,14 @@
 from core.llm.prompts.chart_selector import SYSTEM_PROMPT, USER_PROMPT
+from core.results.types import ResultType
 
 def select_chart_type(llm, question: str, profile, eligible_charts: list[str]):
     if not eligible_charts:
+        return None
+
+    if profile is None:
+        return None
+
+    if profile.result_type == ResultType.EMPTY:
         return None
 
     prompt = SYSTEM_PROMPT + USER_PROMPT.format(
