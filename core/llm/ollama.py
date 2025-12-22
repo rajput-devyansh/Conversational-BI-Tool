@@ -20,3 +20,13 @@ def get_ollama_llm(
         temperature=temperature,
         timeout=OLLAMA_TIMEOUT
     )
+
+def get_chart_llm():
+    """
+    Dedicated LLM for chart selection (Issue #13).
+    Uses a small, instruction-following model.
+    """
+    return get_ollama_llm(
+        model="phi4-mini:3.8b",
+        temperature=0
+    )
