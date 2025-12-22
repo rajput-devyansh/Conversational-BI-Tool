@@ -41,6 +41,7 @@ def render_result(result: dict):
 
     # ---- TIME SERIES (deterministic) ----
     elif result_type == ResultType.TIME_SERIES:
+        result["chart_type"] = "line"
         render_time_series(df, profile)
 
     # ---- AMBIGUOUS: AI chooses among eligible charts ----
@@ -54,6 +55,7 @@ def render_result(result: dict):
 
         print(f"LLM selected chart type: {chart_choice}")
         print(f"Eligible charts: {eligible_charts}")
+        result["chart_type"] = chart_choice
 
         if chart_choice == "bar":
             render_categorical(df, profile)

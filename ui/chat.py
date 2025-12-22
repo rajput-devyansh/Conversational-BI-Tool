@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import uuid
+from pathlib import Path
 
 from ui.renderer import render_result
 from ui.state import init_chat_state, get_active_chat
@@ -21,6 +22,10 @@ from core.storage.chat_db import (
     delete_chat,
     delete_all_chats,
 )
+
+# ✅ PDF Export
+from core.export.pdf_exporter import export_chat_to_pdf
+from core.export.pdf_exporter import safe_filename
 
 _followup_llm = get_chart_llm()
 
@@ -70,7 +75,7 @@ def render_chat(agent):
 
         st.divider()
 
-        # ---- Rename Chat (explicit confirm) ----
+        # ---- Rename Chat ----
         active_chat_id = st.session_state.active_chat_id
         active_chat = st.session_state.chats[active_chat_id]
 
@@ -85,6 +90,26 @@ def render_chat(agent):
                 active_chat["name"] = draft_name.strip()
                 save_chat(active_chat_id, active_chat["name"])
                 st.rerun()
+
+        st.divider()
+
+        # ---- Export Chat to PDF (✅ NEW) ----
+        if st.button("📄 Export chat to PDF"):
+            export_dir = Path("exports")
+            export_dir.mkdir(exist_ok=True)
+
+            filename = f"{safe_filename(active_chat['name'])}.pdf"
+            output_path = export_dir / filename
+
+            export_chat_to_pdf(active_chat, output_path)
+
+            st.success("Chat exported successfully!")
+            st.download_button(
+                label="⬇️ Download PDF",
+                data=output_path.read_bytes(),
+                file_name=filename,
+                mime="application/pdf",
+            )
 
         st.divider()
         st.markdown("### ⚠️ Danger Zone")
@@ -181,7 +206,7 @@ def render_chat(agent):
                         st.session_state.pending_question = fq
                         st.rerun()
 
-    # ---- Next question (typed or suggested) ----
+    # ---- Next question ----
     question = st.session_state.pop("pending_question", None) or st.chat_input(
         "Ask a business question…"
     )
@@ -198,7 +223,7 @@ def render_chat(agent):
         duration = round(time.perf_counter() - start_time, 2)
         result["question"] = question
 
-        # ---- Auto-name chat on first question ----
+        # ---- Auto-name chat ----
         if len(chat["history"]) == 0:
             chat["name"] = question[:40]
             save_chat(st.session_state.active_chat_id, chat["name"])
