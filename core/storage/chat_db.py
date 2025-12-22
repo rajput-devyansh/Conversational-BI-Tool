@@ -3,13 +3,56 @@ import json
 import time
 from pathlib import Path
 
-DB_PATH = Path("data/chats.db")
+import pandas as pd
+
+DB_PATH = Path("data/chat_data/chats.db")
 
 
 def get_conn():
     DB_PATH.parent.mkdir(exist_ok=True)
-    return sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
 
+
+# ---------- SERIALIZATION HELPERS ----------
+
+def serialize_result(result: dict) -> dict:
+    """
+    Convert result dict into JSON-serializable form.
+    """
+    if result is None:
+        return None
+
+    safe = result.copy()
+
+    df = safe.get("data")
+    if isinstance(df, pd.DataFrame):
+        safe["data"] = {
+            "columns": list(df.columns),
+            "rows": df.to_dict(orient="records"),
+        }
+
+    return safe
+
+
+def deserialize_result(result_json: str) -> dict:
+    """
+    Restore result dict, including DataFrame.
+    """
+    if result_json is None:
+        return None
+
+    result = json.loads(result_json)
+
+    data = result.get("data")
+    if isinstance(data, dict) and "rows" in data:
+        result["data"] = pd.DataFrame(data["rows"])
+
+    return result
+
+
+# ---------- INIT ----------
 
 def init_db():
     conn = get_conn()
@@ -19,8 +62,8 @@ def init_db():
         """
         CREATE TABLE IF NOT EXISTS chats (
             id TEXT PRIMARY KEY,
-            name TEXT,
-            created_at REAL
+            name TEXT NOT NULL,
+            created_at REAL NOT NULL
         )
         """
     )
@@ -29,12 +72,13 @@ def init_db():
         """
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id TEXT,
-            role TEXT,
+            chat_id TEXT NOT NULL,
+            role TEXT NOT NULL,
             content TEXT,
             result_json TEXT,
             duration REAL,
-            created_at REAL
+            created_at REAL NOT NULL,
+            FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
         )
         """
     )
@@ -49,7 +93,9 @@ def load_chats():
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute("SELECT id, name, created_at FROM chats ORDER BY created_at")
+    cur.execute(
+        "SELECT id, name, created_at FROM chats ORDER BY created_at"
+    )
     rows = cur.fetchall()
 
     chats = {}
@@ -65,6 +111,9 @@ def load_chats():
 
 
 def load_messages(chat_id):
+    """
+    Reconstruct full (question + result) interactions from message rows.
+    """
     conn = get_conn()
     cur = conn.cursor()
 
@@ -79,13 +128,21 @@ def load_messages(chat_id):
     )
 
     messages = []
+    pending_question = None
+
     for role, content, result_json, duration in cur.fetchall():
-        entry = {
-            "question": content if role == "user" else None,
-            "result": json.loads(result_json) if result_json else None,
-            "duration": duration,
-        }
-        messages.append(entry)
+        if role == "user":
+            pending_question = content
+
+        elif role == "assistant" and pending_question is not None:
+            messages.append(
+                {
+                    "question": pending_question,
+                    "result": deserialize_result(result_json) if result_json else None,
+                    "duration": duration,
+                }
+            )
+            pending_question = None
 
     conn.close()
     return messages
@@ -115,14 +172,21 @@ def save_message(chat_id, role, content, result=None, duration=None):
 
     cur.execute(
         """
-        INSERT INTO messages (chat_id, role, content, result_json, duration, created_at)
+        INSERT INTO messages (
+            chat_id,
+            role,
+            content,
+            result_json,
+            duration,
+            created_at
+        )
         VALUES (?, ?, ?, ?, ?, ?)
         """,
         (
             chat_id,
             role,
             content,
-            json.dumps(result) if result else None,
+            json.dumps(serialize_result(result)) if result is not None else None,
             duration,
             time.time(),
         ),

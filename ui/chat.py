@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import uuid
 
 from ui.renderer import render_result
 from ui.state import init_chat_state, get_active_chat
@@ -8,51 +9,60 @@ from core.suggestions.initial import INITIAL_QUESTIONS
 from core.suggestions.followups import suggest_followups
 from core.results.classifier import build_result_profile
 
-# ✅ LLM follow-ups
+# LLM follow-ups
 from core.llm.followups import generate_followups_llm
 from core.llm.ollama import get_chart_llm
+
+# SQLite persistence
+from core.storage.chat_db import (
+    init_db,
+    save_chat,
+    save_message,
+    delete_chat,
+    delete_all_chats,
+)
 
 _followup_llm = get_chart_llm()
 
 
 def render_chat(agent):
+    # ---- Init DB + State ----
+    init_db()
     init_chat_state()
 
-    # ---- Sidebar: Chat sessions ----
+    # =========================
+    # SIDEBAR: CHAT MANAGEMENT
+    # =========================
     with st.sidebar:
         st.markdown("## 💬 Chats")
 
-        # New Chat
+        # ---- New Chat ----
         if st.button("➕ New Chat"):
-            import uuid, time as _time
-
             chat_id = str(uuid.uuid4())
             st.session_state.chats[chat_id] = {
                 "name": "New Chat",
-                "created_at": _time.time(),
+                "created_at": time.time(),
                 "history": [],
             }
             st.session_state.active_chat_id = chat_id
+            save_chat(chat_id, "New Chat")
             st.rerun()
 
         st.divider()
 
-        # 🔍 Search chats
+        # ---- Search Chats ----
         search_query = st.text_input(
             "🔍 Search chats",
             placeholder="Type to filter chats…",
         ).lower()
 
-        # ---- Chat list ----
         for cid, chat in st.session_state.chats.items():
             name = chat["name"]
 
             if search_query and search_query not in name.lower():
                 continue
 
-            label = name
-            if cid == st.session_state.active_chat_id:
-                label = f"➡️ {label}"
+            label = f"➡️ {name}" if cid == st.session_state.active_chat_id else name
 
             if st.button(label, key=f"chat_{cid}"):
                 st.session_state.active_chat_id = cid
@@ -60,43 +70,42 @@ def render_chat(agent):
 
         st.divider()
 
-        # ✏️ Rename active chat (explicit confirm)
+        # ---- Rename Chat (explicit confirm) ----
         active_chat_id = st.session_state.active_chat_id
         active_chat = st.session_state.chats[active_chat_id]
 
         draft_name = st.text_input(
             "✏️ Rename chat",
             value=active_chat["name"],
-            key=f"rename_draft_{active_chat_id}",
+            key=f"rename_{active_chat_id}",
         )
 
         if st.button("✅ Confirm rename"):
             if draft_name.strip():
                 active_chat["name"] = draft_name.strip()
+                save_chat(active_chat_id, active_chat["name"])
                 st.rerun()
 
-                st.divider()
+        st.divider()
         st.markdown("### ⚠️ Danger Zone")
 
-        # ---- Delete current chat ----
-        delete_current = st.checkbox("I understand, delete current chat")
+        # ---- Delete Current Chat ----
+        confirm_delete = st.checkbox("I understand, delete current chat")
 
-        if st.button("🗑️ Delete Current Chat", disabled=not delete_current):
-            current_id = st.session_state.active_chat_id
-            st.session_state.chats.pop(current_id, None)
+        if st.button("🗑️ Delete Current Chat", disabled=not confirm_delete):
+            delete_chat(active_chat_id)
+            st.session_state.chats.pop(active_chat_id, None)
 
-            # If no chats left, create a fresh one
             if not st.session_state.chats:
-                import uuid, time as _time
                 new_id = str(uuid.uuid4())
                 st.session_state.chats[new_id] = {
                     "name": "New Chat",
-                    "created_at": _time.time(),
+                    "created_at": time.time(),
                     "history": [],
                 }
+                save_chat(new_id, "New Chat")
                 st.session_state.active_chat_id = new_id
             else:
-                # Switch to any remaining chat
                 st.session_state.active_chat_id = next(
                     iter(st.session_state.chats.keys())
                 )
@@ -105,32 +114,36 @@ def render_chat(agent):
 
         st.divider()
 
-        # ---- Delete all chats ----
-        delete_all = st.checkbox("I understand, delete ALL chats")
+        # ---- Delete All Chats ----
+        confirm_delete_all = st.checkbox("I understand, delete ALL chats")
 
-        if st.button("🚨 Delete ALL Chats", disabled=not delete_all):
+        if st.button("🚨 Delete ALL Chats", disabled=not confirm_delete_all):
+            delete_all_chats()
             st.session_state.chats.clear()
 
-            import uuid, time as _time
             new_id = str(uuid.uuid4())
             st.session_state.chats[new_id] = {
                 "name": "New Chat",
-                "created_at": _time.time(),
+                "created_at": time.time(),
                 "history": [],
             }
+            save_chat(new_id, "New Chat")
             st.session_state.active_chat_id = new_id
-
             st.rerun()
 
-    # ---- Active chat reference ----
+    # =========================
+    # MAIN CHAT AREA
+    # =========================
     chat = get_active_chat()
 
-    # ---- Clear Chat (CURRENT CHAT ONLY) ----
+    # ---- Clear current chat messages ----
     if st.button("🧹 Clear chat"):
         chat["history"] = []
+        delete_chat(st.session_state.active_chat_id)
+        save_chat(st.session_state.active_chat_id, chat["name"])
         st.rerun()
 
-    # ---- Initial suggestions (ONLY when chat is empty) ----
+    # ---- Initial suggestions ----
     if len(chat["history"]) == 0:
         st.markdown("### Try asking:")
         for q in INITIAL_QUESTIONS:
@@ -138,7 +151,7 @@ def render_chat(agent):
                 st.session_state.pending_question = q
                 st.rerun()
 
-    # ---- Render previous interactions (ONLY source of truth) ----
+    # ---- Render history ----
     for entry in chat["history"]:
         with st.chat_message("user"):
             st.markdown(entry["question"])
@@ -149,7 +162,7 @@ def render_chat(agent):
             if entry.get("duration") is not None:
                 st.caption(f"⏱️ Processed in {entry['duration']} seconds")
 
-            # ---- Follow-up suggestions (LLM → fallback) ----
+            # ---- Follow-up suggestions ----
             profile = build_result_profile(entry["result"]["data"])
 
             followups = generate_followups_llm(
@@ -168,7 +181,7 @@ def render_chat(agent):
                         st.session_state.pending_question = fq
                         st.rerun()
 
-    # ---- Determine next question (typed OR suggested) ----
+    # ---- Next question (typed or suggested) ----
     question = st.session_state.pop("pending_question", None) or st.chat_input(
         "Ask a business question…"
     )
@@ -183,12 +196,27 @@ def render_chat(agent):
             result = agent(question)
 
         duration = round(time.perf_counter() - start_time, 2)
-
         result["question"] = question
 
         # ---- Auto-name chat on first question ----
         if len(chat["history"]) == 0:
             chat["name"] = question[:40]
+            save_chat(st.session_state.active_chat_id, chat["name"])
+
+        # ---- Persist messages ----
+        save_message(
+            chat_id=st.session_state.active_chat_id,
+            role="user",
+            content=question,
+        )
+
+        save_message(
+            chat_id=st.session_state.active_chat_id,
+            role="assistant",
+            content="assistant_response",
+            result=result,
+            duration=duration,
+        )
 
         chat["history"].append(
             {
