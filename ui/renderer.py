@@ -1,6 +1,7 @@
 import streamlit as st
 
 from core.results.classifier import classify_result
+from ui.explainability import render_explainability_panel
 from core.results.types import ResultType
 from ui.charts import (
     render_metric,
@@ -9,7 +10,6 @@ from ui.charts import (
     render_table,
     render_empty,
 )
-
 
 def render_result(result: dict):
     if not result["success"]:
@@ -21,7 +21,7 @@ def render_result(result: dict):
 
     if result_type == ResultType.EMPTY:
         render_empty()
-        _render_technical_details(result)
+        render_explainability_panel(result)
         return
 
     if result_type == ResultType.METRIC:
@@ -36,10 +36,4 @@ def render_result(result: dict):
     else:
         render_table(df)
 
-    _render_technical_details(result)
-
-
-def _render_technical_details(result: dict):
-    with st.expander("🔍 Technical details"):
-        st.code(result["sql"], language="sql")
-        st.caption(f"Attempts: {result['attempts']}")
+    render_explainability_panel(result)
