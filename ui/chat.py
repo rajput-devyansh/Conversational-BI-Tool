@@ -4,6 +4,10 @@ import time
 from ui.renderer import render_result
 from ui.state import init_chat_state
 
+from core.suggestions.initial import INITIAL_QUESTIONS
+from core.suggestions.followups import suggest_followups
+from core.results.classifier import build_result_profile  # ✅ FIXED IMPORT
+
 
 def render_chat(agent):
     init_chat_state()
@@ -12,10 +16,18 @@ def render_chat(agent):
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # ✅ NEW: Clear Chat button (minimal, safe)
+    # ---- Clear Chat ----
     if st.button("🧹 Clear chat"):
         st.session_state.chat_history = []
         st.rerun()
+
+    # ---- Initial suggestions (ONLY when chat is empty) ----
+    if len(st.session_state.chat_history) == 0:
+        st.markdown("### Try asking:")
+        for q in INITIAL_QUESTIONS:
+            if st.button(q, key=f"init_{q}"):
+                st.session_state.pending_question = q
+                st.rerun()
 
     # ---- Render previous interactions (ONLY source of truth) ----
     for entry in st.session_state.chat_history:
@@ -28,15 +40,26 @@ def render_chat(agent):
             if entry.get("duration") is not None:
                 st.caption(f"⏱️ Processed in {entry['duration']} seconds")
 
-    # ---- New user input ----
-    question = st.chat_input("Ask a business question…")
+            # ---- Follow-up suggestions ----
+            profile = build_result_profile(entry["result"]["data"])
+            followups = suggest_followups(entry["question"], profile)
+
+            if followups:
+                st.markdown("**You might also ask:**")
+                for fq in followups:
+                    if st.button(fq, key=f"{entry['question']}_{fq}"):
+                        st.session_state.pending_question = fq
+                        st.rerun()
+
+    # ---- Determine next question (typed OR suggested) ----
+    question = st.session_state.pop("pending_question", None) or st.chat_input(
+        "Ask a business question…"
+    )
 
     if question:
-        # Show user message immediately
         with st.chat_message("user"):
             st.markdown(question)
 
-        # Measure end-to-end time
         start_time = time.perf_counter()
 
         with st.spinner("Analyzing data..."):
@@ -44,10 +67,8 @@ def render_chat(agent):
 
         duration = round(time.perf_counter() - start_time, 2)
 
-        # Attach question for downstream use
         result["question"] = question
 
-        # Store interaction ONLY (do not render here)
         st.session_state.chat_history.append(
             {
                 "question": question,
@@ -56,5 +77,4 @@ def render_chat(agent):
             }
         )
 
-        # Force rerun so history loop renders it exactly once
         st.rerun()
