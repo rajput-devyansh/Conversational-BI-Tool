@@ -6,7 +6,13 @@ from ui.state import init_chat_state
 
 from core.suggestions.initial import INITIAL_QUESTIONS
 from core.suggestions.followups import suggest_followups
-from core.results.classifier import build_result_profile  # ✅ FIXED IMPORT
+from core.results.classifier import build_result_profile
+
+# ✅ NEW (LLM follow-ups)
+from core.llm.followups import generate_followups_llm
+from core.llm.ollama import get_chart_llm
+
+_followup_llm = get_chart_llm()
 
 
 def render_chat(agent):
@@ -40,9 +46,18 @@ def render_chat(agent):
             if entry.get("duration") is not None:
                 st.caption(f"⏱️ Processed in {entry['duration']} seconds")
 
-            # ---- Follow-up suggestions ----
+            # ---- Follow-up suggestions (LLM → fallback) ----
             profile = build_result_profile(entry["result"]["data"])
-            followups = suggest_followups(entry["question"], profile)
+
+            followups = generate_followups_llm(
+                llm=_followup_llm,
+                question=entry["question"],
+                profile=profile,
+            )
+            print("LLM follow-ups:", followups)  # Debug print
+
+            if not followups:
+                followups = suggest_followups(entry["question"], profile)
 
             if followups:
                 st.markdown("**You might also ask:**")

@@ -1,17 +1,16 @@
+# core/suggestions/followups.py
+
 from core.results.types import ResultType
 
 
 def suggest_followups(question: str, profile) -> list[str]:
     """
-    Generate rule-based follow-up questions based on
-    the last question and result profile.
+    Rule-based fallback follow-up suggestions.
     """
 
     suggestions = []
-
     q = question.lower()
 
-    # ---- Revenue metric ----
     if profile.result_type == ResultType.METRIC:
         if "revenue" in q:
             suggestions.extend([
@@ -20,28 +19,24 @@ def suggest_followups(question: str, profile) -> list[str]:
                 "Revenue by state",
             ])
 
-    # ---- Time series ----
     elif profile.result_type == ResultType.TIME_SERIES:
         suggestions.extend([
+            "Which month had the highest value?",
             "Top product categories by revenue",
-            "Which month had the highest revenue?",
-            "Compare revenue for the last 3 months",
+            "Compare last 3 months",
         ])
 
-    # ---- Categorical ----
     elif profile.result_type == ResultType.CATEGORICAL:
         suggestions.extend([
             "Revenue by month",
-            "How much do the top 5 categories contribute?",
+            "How much do the top categories contribute?",
             "Which category performs best over time?",
         ])
 
-    # ---- Fallback ----
     if not suggestions:
-        suggestions.extend([
+        suggestions = [
             "What is the total revenue?",
             "How many orders are there?",
-        ])
+        ]
 
-    # Remove duplicates, limit to 4
-    return list(dict.fromkeys(suggestions))[:4]
+    return suggestions[:4]
