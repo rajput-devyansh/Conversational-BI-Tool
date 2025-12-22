@@ -37,9 +37,20 @@ def render_chat(agent):
 
         st.divider()
 
-        # List chats
+        # 🔍 Search chats
+        search_query = st.text_input(
+            "🔍 Search chats",
+            placeholder="Type to filter chats…",
+        ).lower()
+
+        # List chats (filtered)
         for cid, chat in st.session_state.chats.items():
-            label = chat["name"]
+            name = chat["name"]
+
+            if search_query and search_query not in name.lower():
+                continue
+
+            label = name
             if cid == st.session_state.active_chat_id:
                 label = f"➡️ {label}"
 
