@@ -12,6 +12,11 @@ def render_chat(agent):
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # ✅ NEW: Clear Chat button (minimal, safe)
+    if st.button("🧹 Clear chat"):
+        st.session_state.chat_history = []
+        st.rerun()
+
     # ---- Render previous interactions (ONLY source of truth) ----
     for entry in st.session_state.chat_history:
         with st.chat_message("user"):
