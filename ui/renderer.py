@@ -5,6 +5,7 @@ from ui.explainability import render_explainability_panel
 from core.llm.chart_selector import select_chart_type
 from core.llm.ollama import get_chart_llm
 from core.results.types import ResultType
+from ui.summary import render_executive_summary
 from ui.charts import (
     render_metric,
     render_time_series,
@@ -62,6 +63,13 @@ def render_result(result: dict):
             render_metric(df)
         else:
             render_table(df)
+    
+    # ---- Executive summary ----
+    render_executive_summary(
+        df=df,
+        profile=profile,
+        question=result.get("question", ""),
+    )
 
     # ---- EXPLAINABILITY ----
     render_explainability_panel(result)
