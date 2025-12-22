@@ -12,7 +12,7 @@ def render_chat(agent):
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # ---- Render previous interactions ----
+    # ---- Render previous interactions (ONLY source of truth) ----
     for entry in st.session_state.chat_history:
         with st.chat_message("user"):
             st.markdown(entry["question"])
@@ -27,23 +27,22 @@ def render_chat(agent):
     question = st.chat_input("Ask a business question…")
 
     if question:
+        # Show user message immediately
         with st.chat_message("user"):
             st.markdown(question)
 
-        # ---- Measure end-to-end time ----
+        # Measure end-to-end time
         start_time = time.perf_counter()
 
-        with st.chat_message("assistant"):
-            with st.spinner("Analyzing data..."):
-                result = agent(question)  # ✅ CORRECT CALL
+        with st.spinner("Analyzing data..."):
+            result = agent(question)
 
-        end_time = time.perf_counter()
-        duration = round(end_time - start_time, 2)
+        duration = round(time.perf_counter() - start_time, 2)
 
         # Attach question for downstream use
         result["question"] = question
 
-        # ---- Store interaction ----
+        # Store interaction ONLY (do not render here)
         st.session_state.chat_history.append(
             {
                 "question": question,
@@ -52,7 +51,5 @@ def render_chat(agent):
             }
         )
 
-        # ---- Render result immediately ----
-        with st.chat_message("assistant"):
-            render_result(result)
-            st.caption(f"⏱️ Processed in {duration} seconds")
+        # Force rerun so history loop renders it exactly once
+        st.rerun()
