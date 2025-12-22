@@ -2,13 +2,13 @@ import streamlit as st
 import time
 
 from ui.renderer import render_result
-from ui.state import init_chat_state
+from ui.state import init_chat_state, get_active_chat
 
 from core.suggestions.initial import INITIAL_QUESTIONS
 from core.suggestions.followups import suggest_followups
 from core.results.classifier import build_result_profile
 
-# ✅ NEW (LLM follow-ups)
+# ✅ LLM follow-ups
 from core.llm.followups import generate_followups_llm
 from core.llm.ollama import get_chart_llm
 
@@ -18,17 +18,45 @@ _followup_llm = get_chart_llm()
 def render_chat(agent):
     init_chat_state()
 
-    # ---- Initialize chat history if missing ----
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # ---- Sidebar: Chat sessions ----
+    with st.sidebar:
+        st.markdown("## 💬 Chats")
 
-    # ---- Clear Chat ----
+        # New Chat
+        if st.button("➕ New Chat"):
+            import uuid, time as _time
+
+            chat_id = str(uuid.uuid4())
+            st.session_state.chats[chat_id] = {
+                "name": "New Chat",
+                "created_at": _time.time(),
+                "history": [],
+            }
+            st.session_state.active_chat_id = chat_id
+            st.rerun()
+
+        st.divider()
+
+        # List chats
+        for cid, chat in st.session_state.chats.items():
+            label = chat["name"]
+            if cid == st.session_state.active_chat_id:
+                label = f"➡️ {label}"
+
+            if st.button(label, key=f"chat_{cid}"):
+                st.session_state.active_chat_id = cid
+                st.rerun()
+
+    # ---- Active chat reference ----
+    chat = get_active_chat()
+
+    # ---- Clear Chat (CURRENT CHAT ONLY) ----
     if st.button("🧹 Clear chat"):
-        st.session_state.chat_history = []
+        chat["history"] = []
         st.rerun()
 
     # ---- Initial suggestions (ONLY when chat is empty) ----
-    if len(st.session_state.chat_history) == 0:
+    if len(chat["history"]) == 0:
         st.markdown("### Try asking:")
         for q in INITIAL_QUESTIONS:
             if st.button(q, key=f"init_{q}"):
@@ -36,7 +64,7 @@ def render_chat(agent):
                 st.rerun()
 
     # ---- Render previous interactions (ONLY source of truth) ----
-    for entry in st.session_state.chat_history:
+    for entry in chat["history"]:
         with st.chat_message("user"):
             st.markdown(entry["question"])
 
@@ -54,7 +82,6 @@ def render_chat(agent):
                 question=entry["question"],
                 profile=profile,
             )
-            print("LLM follow-ups:", followups)  # Debug print
 
             if not followups:
                 followups = suggest_followups(entry["question"], profile)
@@ -84,7 +111,11 @@ def render_chat(agent):
 
         result["question"] = question
 
-        st.session_state.chat_history.append(
+        # ---- Auto-name chat on first question ----
+        if len(chat["history"]) == 0:
+            chat["name"] = question[:40]
+
+        chat["history"].append(
             {
                 "question": question,
                 "result": result,
