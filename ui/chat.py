@@ -43,7 +43,7 @@ def render_chat(agent):
             placeholder="Type to filter chats…",
         ).lower()
 
-        # List chats (filtered)
+        # ---- Chat list ----
         for cid, chat in st.session_state.chats.items():
             name = chat["name"]
 
@@ -57,6 +57,24 @@ def render_chat(agent):
             if st.button(label, key=f"chat_{cid}"):
                 st.session_state.active_chat_id = cid
                 st.rerun()
+
+        st.divider()
+
+        # ✏️ Rename active chat (explicit confirm)
+        active_chat_id = st.session_state.active_chat_id
+        active_chat = st.session_state.chats[active_chat_id]
+
+        draft_name = st.text_input(
+            "✏️ Rename chat",
+            value=active_chat["name"],
+            key=f"rename_draft_{active_chat_id}",
+        )
+
+        if st.button("✅ Confirm rename"):
+            if draft_name.strip():
+                active_chat["name"] = draft_name.strip()
+                st.rerun()
+
 
     # ---- Active chat reference ----
     chat = get_active_chat()
