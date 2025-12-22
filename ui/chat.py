@@ -2,19 +2,13 @@ import streamlit as st
 import time
 import uuid
 from pathlib import Path
-
 from ui.renderer import render_result
 from ui.state import init_chat_state, get_active_chat
-
 from core.suggestions.initial import INITIAL_QUESTIONS
 from core.suggestions.followups import suggest_followups
 from core.results.classifier import build_result_profile
-
-# LLM follow-ups
 from core.llm.followups import generate_followups_llm
 from core.llm.ollama import get_chart_llm
-
-# SQLite persistence
 from core.storage.chat_db import (
     init_db,
     save_chat,
@@ -22,22 +16,17 @@ from core.storage.chat_db import (
     delete_chat,
     delete_all_chats,
 )
-
-# ✅ PDF Export
 from core.export.pdf_exporter import export_chat_to_pdf
 from core.export.pdf_exporter import safe_filename
 
 _followup_llm = get_chart_llm()
-
 
 def render_chat(agent):
     # ---- Init DB + State ----
     init_db()
     init_chat_state()
 
-    # =========================
     # SIDEBAR: CHAT MANAGEMENT
-    # =========================
     with st.sidebar:
         st.markdown("## 💬 Chats")
 
@@ -156,9 +145,7 @@ def render_chat(agent):
             st.session_state.active_chat_id = new_id
             st.rerun()
 
-    # =========================
     # MAIN CHAT AREA
-    # =========================
     chat = get_active_chat()
 
     # ---- Clear current chat messages ----

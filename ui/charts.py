@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 
-
 def render_metric(df: pd.DataFrame):
     if df.empty or df.shape != (1, 1):
         st.warning("Unable to render metric for this result.")
@@ -18,7 +17,6 @@ def render_metric(df: pd.DataFrame):
 
     st.metric(label=label, value=formatted_value)
 
-
 def render_time_series(df: pd.DataFrame, profile):
     if not profile.temporal_cols or not profile.numeric_cols:
         st.warning("Unable to render time series for this result.")
@@ -30,7 +28,6 @@ def render_time_series(df: pd.DataFrame, profile):
     chart_df = df[[time_col, value_col]].set_index(time_col)
 
     st.line_chart(chart_df)
-
 
 def render_categorical(df: pd.DataFrame, profile):
     if not profile.categorical_cols or not profile.numeric_cols:
@@ -44,10 +41,8 @@ def render_categorical(df: pd.DataFrame, profile):
 
     st.bar_chart(chart_df)
 
-
 def render_table(df: pd.DataFrame):
     st.dataframe(df, width="stretch")
-
 
 def render_empty():
     st.info("No data found for this query.")

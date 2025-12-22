@@ -84,12 +84,12 @@
       "primary_key": "customer_id",
       "business_notes": [
         "Each order has a unique customer_id.",
-        "customer_unique_id should be used to identify repeat customers.",
+        "customer_unique_id should be used to identify unique/distinct customers.",
         "Do not use customer_id alone for customer retention analysis."
       ],
       "columns": {
-        "customer_id": "Order-scoped customer identifier",
-        "customer_unique_id": "Stable identifier for identifying repeat customers",
+        "customer_id": "Order-scoped/assigned customer identifier",
+        "customer_unique_id": "Stable identifier for identifying unique/distinct customers",
         "customer_zip_code_prefix": "First five digits of the customer zip code",
         "customer_city": "Customer city name",
         "customer_state": "Customer state"

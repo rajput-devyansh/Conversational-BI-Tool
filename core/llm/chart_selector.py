@@ -1,6 +1,5 @@
 from core.llm.prompts.chart_selector import SYSTEM_PROMPT, USER_PROMPT
 
-
 def select_chart_type(llm, question: str, profile, eligible_charts: list[str]):
     if not eligible_charts:
         return None

@@ -4,9 +4,7 @@ from core.results.summary_facts import extract_summary_facts
 from core.llm.summary_generator import generate_executive_summary
 from core.llm.ollama import get_chart_llm
 
-
 _summary_llm = get_chart_llm()
-
 
 def render_executive_summary(
     df,

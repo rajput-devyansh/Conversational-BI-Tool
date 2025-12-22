@@ -2,7 +2,6 @@ import pandas as pd
 from core.results.types import ResultType
 from core.results.profile import ResultProfile
 
-
 def extract_summary_facts(
     df: pd.DataFrame,
     profile: ResultProfile,

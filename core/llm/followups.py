@@ -2,7 +2,6 @@ import json
 import re
 from core.llm.prompts.followups import SYSTEM_PROMPT, USER_PROMPT
 
-
 def _extract_json_array(text: str) -> list[str]:
     """
     Extract the first JSON array from text safely.
@@ -19,7 +18,6 @@ def _extract_json_array(text: str) -> list[str]:
         return []
 
     return []
-
 
 def generate_followups_llm(llm, question: str, profile, max_items: int = 4) -> list[str]:
     prompt = SYSTEM_PROMPT + USER_PROMPT.format(
