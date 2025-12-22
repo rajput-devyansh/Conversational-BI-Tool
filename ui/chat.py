@@ -75,6 +75,52 @@ def render_chat(agent):
                 active_chat["name"] = draft_name.strip()
                 st.rerun()
 
+                st.divider()
+        st.markdown("### ⚠️ Danger Zone")
+
+        # ---- Delete current chat ----
+        delete_current = st.checkbox("I understand, delete current chat")
+
+        if st.button("🗑️ Delete Current Chat", disabled=not delete_current):
+            current_id = st.session_state.active_chat_id
+            st.session_state.chats.pop(current_id, None)
+
+            # If no chats left, create a fresh one
+            if not st.session_state.chats:
+                import uuid, time as _time
+                new_id = str(uuid.uuid4())
+                st.session_state.chats[new_id] = {
+                    "name": "New Chat",
+                    "created_at": _time.time(),
+                    "history": [],
+                }
+                st.session_state.active_chat_id = new_id
+            else:
+                # Switch to any remaining chat
+                st.session_state.active_chat_id = next(
+                    iter(st.session_state.chats.keys())
+                )
+
+            st.rerun()
+
+        st.divider()
+
+        # ---- Delete all chats ----
+        delete_all = st.checkbox("I understand, delete ALL chats")
+
+        if st.button("🚨 Delete ALL Chats", disabled=not delete_all):
+            st.session_state.chats.clear()
+
+            import uuid, time as _time
+            new_id = str(uuid.uuid4())
+            st.session_state.chats[new_id] = {
+                "name": "New Chat",
+                "created_at": _time.time(),
+                "history": [],
+            }
+            st.session_state.active_chat_id = new_id
+
+            st.rerun()
 
     # ---- Active chat reference ----
     chat = get_active_chat()
