@@ -16,8 +16,6 @@ def get_eligible_charts(profile: ResultProfile) -> list[str]:
     if profile.categorical_cols and profile.numeric_cols:
         eligible.append("bar")
 
-    # Table is almost always valid
     eligible.append("table")
 
-    # Deduplicate while preserving order
     return list(dict.fromkeys(eligible))

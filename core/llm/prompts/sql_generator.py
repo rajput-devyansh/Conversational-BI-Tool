@@ -1,5 +1,3 @@
-# core/llm/prompts/sql_generator.py
-
 SYSTEM_PROMPT = """
 You are an expert data analyst writing SQL queries for a SQLite database.
 

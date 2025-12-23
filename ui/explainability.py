@@ -1,7 +1,6 @@
 import streamlit as st
 from core.sql.inspection import extract_tables_from_sql
 
-
 def render_explainability_panel(result: dict):
     with st.expander("🔍 Technical details"):
         # SQL
@@ -21,7 +20,6 @@ def render_explainability_panel(result: dict):
         if tables:
             st.markdown("**Tables used**")
             st.write(", ".join(tables))
-
 
 def _row_count(result: dict) -> int:
     df = result.get("data")

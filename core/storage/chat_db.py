@@ -2,18 +2,15 @@ import sqlite3
 import json
 import time
 from pathlib import Path
-
 import pandas as pd
 
 DB_PATH = Path("data/chat_data/chats.db")
-
 
 def get_conn():
     DB_PATH.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
-
 
 # ---------- SERIALIZATION HELPERS ----------
 
@@ -35,7 +32,6 @@ def serialize_result(result: dict) -> dict:
 
     return safe
 
-
 def deserialize_result(result_json: str) -> dict:
     """
     Restore result dict, including DataFrame.
@@ -50,7 +46,6 @@ def deserialize_result(result_json: str) -> dict:
         result["data"] = pd.DataFrame(data["rows"])
 
     return result
-
 
 # ---------- INIT ----------
 
@@ -86,7 +81,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 # ---------- LOAD ----------
 
 def load_chats():
@@ -108,7 +102,6 @@ def load_chats():
 
     conn.close()
     return chats
-
 
 def load_messages(chat_id):
     """
@@ -147,7 +140,6 @@ def load_messages(chat_id):
     conn.close()
     return messages
 
-
 # ---------- SAVE ----------
 
 def save_chat(chat_id, name):
@@ -164,7 +156,6 @@ def save_chat(chat_id, name):
 
     conn.commit()
     conn.close()
-
 
 def save_message(chat_id, role, content, result=None, duration=None):
     conn = get_conn()
@@ -195,7 +186,6 @@ def save_message(chat_id, role, content, result=None, duration=None):
     conn.commit()
     conn.close()
 
-
 # ---------- DELETE ----------
 
 def delete_chat(chat_id):
@@ -207,7 +197,6 @@ def delete_chat(chat_id):
 
     conn.commit()
     conn.close()
-
 
 def delete_all_chats():
     conn = get_conn()

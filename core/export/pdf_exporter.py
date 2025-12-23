@@ -16,20 +16,15 @@ from pathlib import Path
 import re
 import pandas as pd
 import tempfile
-
 from core.export.chart_images import render_chart_to_image
 
-
-# -------------------------
 # Helpers
-# -------------------------
 
 def safe_filename(name: str, max_len: int = 40) -> str:
     name = name.strip()
     name = re.sub(r'[\\/*?:"<>|]', "", name)
     name = re.sub(r"\s+", "_", name)
     return name[:max_len] or "chat"
-
 
 def dataframe_to_table(df: pd.DataFrame):
     data = [list(df.columns)] + df.astype(str).values.tolist()
@@ -49,10 +44,7 @@ def dataframe_to_table(df: pd.DataFrame):
     )
     return table
 
-
-# -------------------------
 # Main exporter
-# -------------------------
 
 def export_chat_to_pdf(chat: dict, output_path: Path):
     styles = getSampleStyleSheet()

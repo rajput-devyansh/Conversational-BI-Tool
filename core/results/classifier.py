@@ -3,14 +3,12 @@ import re
 from core.results.types import ResultType
 from core.results.profile import ResultProfile
 
-# ---- Semantic time configuration ----
-
 SEMANTIC_TIME_NAMES = {"date", "day", "month", "year", "week"}
 
 DATE_PATTERNS = [
-    re.compile(r"^\d{4}$"),              # YYYY
-    re.compile(r"^\d{4}-\d{2}$"),         # YYYY-MM
-    re.compile(r"^\d{4}-\d{2}-\d{2}$"),   # YYYY-MM-DD
+    re.compile(r"^\d{4}$"),
+    re.compile(r"^\d{4}-\d{2}$"),
+    re.compile(r"^\d{4}-\d{2}-\d{2}$"),
 ]
 
 def looks_like_date(series: pd.Series) -> bool:
@@ -30,8 +28,7 @@ def looks_like_date(series: pd.Series) -> bool:
 
     return matches / len(sample) >= 0.8
 
-
-# ---- Main profile builder ----
+# Main profile builder
 
 def build_result_profile(df: pd.DataFrame) -> ResultProfile:
     """
@@ -97,9 +94,6 @@ def build_result_profile(df: pd.DataFrame) -> ResultProfile:
         temporal_cols=temporal_cols,
         row_count=len(df),
     )
-
-
-# ---- Backward-compatible classifier ----
 
 def classify_result(df: pd.DataFrame) -> ResultType:
     """

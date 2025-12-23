@@ -1,9 +1,7 @@
 import streamlit as st
 import uuid
 import time
-
 from core.storage.chat_db import init_db, load_chats
-
 
 def init_chat_state():
     """
@@ -34,7 +32,6 @@ def init_chat_state():
                 }
             }
             st.session_state.active_chat_id = chat_id
-
 
 def get_active_chat():
     """

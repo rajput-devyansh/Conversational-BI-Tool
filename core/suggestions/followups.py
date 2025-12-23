@@ -1,7 +1,4 @@
-# core/suggestions/followups.py
-
 from core.results.types import ResultType
-
 
 def suggest_followups(question: str, profile) -> list[str]:
     """

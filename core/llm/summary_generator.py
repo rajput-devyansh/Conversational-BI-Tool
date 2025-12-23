@@ -1,6 +1,5 @@
 from core.llm.prompts.executive_summary import SYSTEM_PROMPT, USER_PROMPT
 
-
 def generate_executive_summary(
     llm,
     facts_payload: dict,
@@ -25,16 +24,13 @@ def generate_executive_summary(
     except Exception:
         return None
 
-    # ---- Extract text safely ----
     if hasattr(response, "content"):
         text = response.content
     else:
         text = str(response)
 
-    # ---- Post-process hard limits ----
     lines = [line.strip() for line in text.splitlines() if line.strip()]
 
-    # Enforce 2–4 lines max
     cleaned = lines[:4]
 
     if not cleaned:

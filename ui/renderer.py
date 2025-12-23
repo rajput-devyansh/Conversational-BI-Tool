@@ -16,7 +16,6 @@ from ui.charts import (
 
 _chart_llm = get_chart_llm()
 
-
 def render_result(result: dict):
     if not result["success"]:
         st.error(result["error"])
@@ -24,7 +23,7 @@ def render_result(result: dict):
 
     df = result["data"]
 
-    # 🔑 NEW: build semantic profile
+    # build semantic profile
     profile = build_result_profile(df)
     result_type = profile.result_type
     eligible_charts = get_eligible_charts(profile)

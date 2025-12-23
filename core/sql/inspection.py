@@ -1,7 +1,6 @@
 import re
 from typing import List
 
-
 def extract_tables_from_sql(sql: str) -> List[str]:
     """
     Naive but reliable table name extraction for SELECT queries.
@@ -17,7 +16,6 @@ def extract_tables_from_sql(sql: str) -> List[str]:
         sql
     )
 
-    # Deduplicate while preserving order
     seen = set()
     tables = []
     for t in matches:

@@ -4,7 +4,6 @@ from pathlib import Path
 SCHEMA_PATH = Path("metadata/schema.json")
 BUSINESS_RULES_PATH = Path("metadata/business_rules.json")
 
-
 def load_schema_context() -> str:
     with open(SCHEMA_PATH, "r") as f:
         schema = json.load(f)
@@ -23,12 +22,10 @@ def load_schema_context() -> str:
 
     return "\n".join(lines)
 
-
 def load_business_rules_context() -> str:
     with open(BUSINESS_RULES_PATH, "r") as f:
         rules = json.load(f)
 
-    # Keep this concise on purpose
     important_rules = [
         rules["metrics"]["revenue"],
         rules["customer_identity"],
